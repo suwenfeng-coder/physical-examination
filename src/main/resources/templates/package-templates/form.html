@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>基础套餐模板</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar(${packageTemplate.id == null ? '新增基础套餐模板' : '编辑基础套餐模板'})}"></header>
+<section class="panel form-panel"><form th:action="@{/package-templates/save}" th:object="${packageTemplate}" method="post"><input type="hidden" th:field="*{id}">
+<div class="form-section"><h3>模板信息</h3><div class="form-grid">
+<label>模板名称 <em>*</em><input th:field="*{name}" placeholder="如：入职基础模板"><small class="field-error" th:errors="*{name}"></small></label>
+<label>模板类型 <em>*</em><select th:field="*{type}"><option th:each="t:${packageTypes}" th:value="${t}" th:text="${t.label}"></option></select><small class="field-error" th:errors="*{type}"></small></label>
+<label class="check-label"><input type="checkbox" th:field="*{enabled}"> 启用此模板</label></div>
+<label>模板说明<textarea rows="3" th:field="*{description}" placeholder="说明模板适用场景"></textarea></label></div>
+<div class="form-section"><h3>模板检查项目 <em>*</em></h3><div class="field-error" th:if="${#fields.hasGlobalErrors()}" th:each="e:${#fields.globalErrors()}" th:text="${e}"></div>
+<div class="guide-summary">项目指导价合计：<strong id="templateGuidePrice">¥0.00</strong></div>
+<div class="item-selector"><label th:each="i:${allItems}"><input class="template-item" type="checkbox" name="itemIds" th:value="${i.id}" th:data-price="${i.price}" th:checked="${packageTemplate.items.contains(i)}"><span><b th:text="${i.name}"></b><small><i th:text="${i.departmentName}"></i><i th:text="${'¥' + i.price}"></i></small></span></label></div></div>
+<div class="form-actions"><a class="btn" th:href="@{/package-templates}">取消</a><button class="btn btn-primary">保存模板</button></div></form></section></main>
+<script>
+const templateItems = Array.from(document.querySelectorAll('.template-item'));
+function updateTemplatePrice() {
+  const total = templateItems.filter(input => input.checked)
+    .reduce((sum, input) => sum + Number(input.dataset.price || 0), 0);
+  document.getElementById('templateGuidePrice').textContent = '¥' + total.toFixed(2);
+}
+templateItems.forEach(input => input.addEventListener('change', updateTemplatePrice));
+updateTemplatePrice();
+</script></body></html>

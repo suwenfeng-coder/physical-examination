@@ -12,6 +12,7 @@
         <a th:href="@{/orders}" th:classappend="${#strings.startsWith(requestUri, '/orders')} ? 'active'"><span>▣</span> 体检管理</a>
         <a th:href="@{/patients}" th:classappend="${#strings.startsWith(requestUri, '/patients')} ? 'active'"><span>♙</span> 受检人管理</a>
         <a th:href="@{/packages}" th:classappend="${#strings.startsWith(requestUri, '/packages')} ? 'active'"><span>▤</span> 套餐管理</a>
+        <a th:href="@{/package-templates}" th:classappend="${#strings.startsWith(requestUri, '/package-templates')} ? 'active'"><span>▥</span> 套餐模板</a>
         <a th:href="@{/items}" th:classappend="${#strings.startsWith(requestUri, '/items')} ? 'active'"><span>◇</span> 检查项目</a>
         <a th:href="@{/departments}" th:classappend="${#strings.startsWith(requestUri, '/departments')} ? 'active'"><span>⌘</span> 科室管理</a>
         <a th:href="@{/doctors}" th:classappend="${#strings.startsWith(requestUri, '/doctors')} ? 'active'"><span>♧</span> 医生管理</a>

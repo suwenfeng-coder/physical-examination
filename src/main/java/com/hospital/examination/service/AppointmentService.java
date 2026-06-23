@@ -87,6 +87,12 @@ public class AppointmentService {
         CheckupPackage checkupPackage = packageRepository.findById(packageId)
                 .filter(CheckupPackage::isEnabled)
                 .orElseThrow(() -> new EntityNotFoundException("体检套餐不存在或已停用"));
+        if ((type == AppointmentType.PERSONAL
+                && checkupPackage.getType() != PackageType.PERSONAL)
+                || (type == AppointmentType.ORGANIZATION
+                && checkupPackage.getType() != PackageType.ORGANIZATION)) {
+            throw new IllegalArgumentException("所选套餐类型与预约类型不一致");
+        }
         Appointment appointment = new Appointment();
         appointment.setAppointmentNo(nextAppointmentNo());
         appointment.setType(type);

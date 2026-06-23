@@ -2,11 +2,38 @@
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>体检套餐</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
 <body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar(${checkupPackage.id == null ? '新增体检套餐' : '编辑体检套餐'})}"></header>
 <section class="panel form-panel"><form th:action="@{/packages/save}" th:object="${checkupPackage}" method="post"><input type="hidden" th:field="*{id}">
+<div class="form-section" th:if="${checkupPackage.id == null and packageTemplates != null and !packageTemplates.isEmpty()}"><h3>选择基础套餐模板</h3>
+<label>基础套餐模板<select id="templateSelect"><option value="">不使用模板，直接创建</option><option th:each="t:${packageTemplates}" th:value="${t.id}" th:text="${t.name + '（' + t.type.label + '，' + t.items.size() + '项）'}" th:data-type="${t.type.name()}" th:data-item-ids="${#strings.listJoin(t.items.![id], ',')}"></option></select></label>
+<p class="form-tip">选择模板后会自动带入套餐类型和检查项目，仍可继续增减项目。</p></div>
 <div class="form-section"><h3>套餐信息</h3><div class="form-grid">
 <label>套餐名称 <em>*</em><input th:field="*{name}"><small class="field-error" th:errors="*{name}"></small></label>
+<label>套餐类型 <em>*</em><select id="packageType" th:field="*{type}"><option th:each="t:${packageTypes}" th:value="${t}" th:text="${t.label}"></option></select><small class="field-error" th:errors="*{type}"></small></label>
 <label>套餐价格 <em>*</em><input type="number" min="0" step="0.01" th:field="*{price}"><small class="field-error" th:errors="*{price}"></small></label>
+<label>套餐指导价格<input id="guidePrice" type="text" th:value="${#numbers.formatDecimal(checkupPackage.guidePrice, 1, 2)}" readonly><small class="form-tip">根据已选检查项目单价自动合计，不可直接修改</small></label>
 <label class="check-label"><input type="checkbox" th:field="*{enabled}"> 启用此套餐</label></div>
 <label>套餐说明<textarea rows="3" th:field="*{description}"></textarea></label></div>
 <div class="form-section"><h3>选择检查项目 <em>*</em></h3><div class="field-error" th:if="${#fields.hasGlobalErrors()}" th:each="e:${#fields.globalErrors()}" th:text="${e}"></div>
-<div class="item-selector"><label th:each="i:${allItems}"><input type="checkbox" name="itemIds" th:value="${i.id}" th:checked="${checkupPackage.items.contains(i)}"><span><b th:text="${i.name}"></b><small><i th:text="${i.departmentName}"></i><i th:text="${'¥' + i.price}"></i></small></span></label></div></div>
-<div class="form-actions"><a class="btn" th:href="@{/packages}">取消</a><button class="btn btn-primary">保存套餐</button></div></form></section></main></body></html>
+<div class="item-selector"><label th:each="i:${allItems}"><input class="package-item" type="checkbox" name="itemIds" th:value="${i.id}" th:data-price="${i.price}" th:checked="${checkupPackage.items.contains(i)}"><span><b th:text="${i.name}"></b><small><i th:text="${i.departmentName}"></i><i th:text="${'¥' + i.price}"></i></small></span></label></div></div>
+<div class="form-actions"><a class="btn" th:href="@{/packages}">取消</a><button class="btn btn-primary">保存套餐</button></div></form></section></main>
+<script>
+const itemInputs = Array.from(document.querySelectorAll('.package-item'));
+const guidePrice = document.getElementById('guidePrice');
+function updateGuidePrice() {
+  const total = itemInputs.filter(input => input.checked)
+    .reduce((sum, input) => sum + Number(input.dataset.price || 0), 0);
+  guidePrice.value = total.toFixed(2);
+}
+itemInputs.forEach(input => input.addEventListener('change', updateGuidePrice));
+const templateSelect = document.getElementById('templateSelect');
+if (templateSelect) {
+  templateSelect.addEventListener('change', () => {
+    const option = templateSelect.selectedOptions[0];
+    if (!option.value) return;
+    const selectedIds = new Set((option.dataset.itemIds || '').split(',').filter(Boolean));
+    itemInputs.forEach(input => input.checked = selectedIds.has(input.value));
+    document.getElementById('packageType').value = option.dataset.type;
+    updateGuidePrice();
+  });
+}
+updateGuidePrice();
+</script></body></html>

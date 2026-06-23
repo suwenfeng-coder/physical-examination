@@ -65,7 +65,8 @@ class PhysicalExaminationApplicationTests {
         String[] paths = {
                 "/", "/patients", "/patients/new", "/doctors", "/doctors/new",
                 "/items", "/items/new", "/departments", "/departments/new",
-                "/packages", "/packages/new", "/orders", "/orders/new",
+                "/packages", "/packages/new", "/package-templates", "/package-templates/new",
+                "/orders", "/orders/new",
                 "/appointments", "/appointments/new/personal", "/appointments/new/organization",
                 "/appointments/organization/template"
         };
