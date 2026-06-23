@@ -7,7 +7,7 @@
 </section>
 <section class="info-grid">
 <div class="panel info-card"><span>受检人</span><strong th:text="${order.patient.name}"></strong><p th:text="${order.patient.gender.label + ' · ' + order.patient.age + '岁 · ' + order.patient.phone}"></p></div>
-<div class="panel info-card"><span>主检医生</span><strong th:text="${order.doctor == null ? '暂未指定' : order.doctor.name}"></strong><p th:text="${order.doctor == null ? '-' : order.doctor.department + ' · ' + order.doctor.title}"></p></div>
+<div class="panel info-card"><span>主检医生</span><strong th:text="${order.doctor == null ? '暂未指定' : order.doctor.name}"></strong><p th:text="${order.doctor == null ? '-' : order.doctor.departmentName + ' · ' + order.doctor.title}"></p></div>
 <div class="panel info-card"><span>套餐金额</span><strong th:text="${'¥ ' + order.amount}"></strong><p th:text="${order.results.size() + ' 个检查项目'}"></p></div>
 </section>
 <section class="panel">
@@ -15,7 +15,7 @@
 <form th:action="@{/orders/{id}/results(id=${order.id})}" method="post">
 <div class="table-wrap"><table class="result-table"><thead><tr><th>检查项目</th><th>科室</th><th>参考范围</th><th>检查结果</th><th>判定</th><th>备注</th></tr></thead><tbody>
 <tr th:each="r:${order.results}"><input type="hidden" name="resultIds" th:value="${r.id}">
-<td><b th:text="${r.item.name}"></b></td><td th:text="${r.item.department}"></td><td><span th:text="${#strings.isEmpty(r.item.referenceRange) ? '-' : r.item.referenceRange}"></span><small th:if="${!#strings.isEmpty(r.item.unit)}" th:text="${r.item.unit}"></small></td>
+<td><b th:text="${r.item.name}"></b></td><td th:text="${r.item.departmentName}"></td><td><span th:text="${#strings.isEmpty(r.item.referenceRange) ? '-' : r.item.referenceRange}"></span><small th:if="${!#strings.isEmpty(r.item.unit)}" th:text="${r.item.unit}"></small></td>
 <td><input name="resultValues" th:value="${r.resultValue}" placeholder="填写结果"></td>
 <td><select name="resultStatuses"><option th:each="s:${resultStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == r.status}"></option></select></td>
 <td><input name="remarks" th:value="${r.remark}" placeholder="选填"></td></tr></tbody></table></div>

@@ -52,7 +52,7 @@ public class ExamOrderController {
     public String createForm(Model model) {
         model.addAttribute("patients", patientRepository.findAll());
         model.addAttribute("packages", packageRepository.findByEnabledTrueOrderByIdDesc());
-        model.addAttribute("doctors", doctorRepository.findByEnabledTrueOrderByDepartmentAscNameAsc());
+        model.addAttribute("doctors", doctorRepository.findEnabledOrdered());
         model.addAttribute("today", LocalDate.now());
         return "orders/form";
     }

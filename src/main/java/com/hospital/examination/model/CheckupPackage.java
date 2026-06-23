@@ -33,7 +33,7 @@ public class CheckupPackage {
     @JoinTable(name = "package_items",
             joinColumns = @JoinColumn(name = "package_id"),
             inverseJoinColumns = @JoinColumn(name = "item_id"))
-    @OrderBy("department asc, id asc")
+    @OrderBy("id asc")
     private Set<CheckupItem> items = new LinkedHashSet<>();
 
     public Long getId() { return id; }

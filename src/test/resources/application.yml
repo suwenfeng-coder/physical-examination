@@ -11,3 +11,6 @@ app:
   admin:
     username: admin
     password: 123456
+  sms:
+    provider: logging
+    dev-mode: true

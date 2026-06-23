@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>用户注册 - 安康体检管理系统</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="login-page register-page">
+<div class="login-decoration one"></div>
+<div class="login-decoration two"></div>
+<main class="login-card auth-card register-card">
+    <div class="login-brand">
+        <span class="brand-mark">✚</span>
+        <div><h1>创建账户</h1><p>安康医院体检管理系统</p></div>
+    </div>
+    <div class="login-intro compact">
+        <span class="eyebrow">CREATE ACCOUNT</span>
+        <h2>手机验证注册</h2>
+        <p>完成验证后即可使用密码或验证码登录</p>
+    </div>
+    <div class="alert error" th:if="${error}" th:text="${error}"></div>
+    <form th:action="@{/register}" method="post" class="stack-form sms-form">
+        <label>用户名
+            <input name="username" th:value="${username}" placeholder="2-20位中文、字母、数字或下划线"
+                   minlength="2" maxlength="20" required autofocus>
+        </label>
+        <label>手机号码
+            <input id="registerPhone" name="phone" th:value="${phone}" placeholder="请输入11位手机号码"
+                   pattern="1\d{10}" maxlength="11" required>
+        </label>
+        <label>短信验证码
+            <span class="code-input">
+                <input name="verificationCode" placeholder="请输入6位验证码"
+                       inputmode="numeric" pattern="\d{6}" maxlength="6" required>
+                <button type="button" class="send-code" data-phone="#registerPhone" data-purpose="REGISTER">获取验证码</button>
+            </span>
+        </label>
+        <div class="sms-message" aria-live="polite"></div>
+        <label>登录密码
+            <input type="password" name="password" placeholder="8-32位，必须同时包含字母和数字"
+                   minlength="8" maxlength="32" required>
+        </label>
+        <label>确认密码
+            <input type="password" name="confirmPassword" placeholder="请再次输入密码"
+                   minlength="8" maxlength="32" required>
+        </label>
+        <button class="btn btn-primary btn-block" type="submit">注册账户</button>
+    </form>
+    <div class="auth-footer">
+        <span>已有账户？</span><a th:href="@{/login}">返回登录</a>
+    </div>
+</main>
+<script th:src="@{/js/auth.js}"></script>
+</body>
+</html>

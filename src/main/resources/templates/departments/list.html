@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>科室管理</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('科室管理')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel"><div class="panel-head"><div><h3>科室信息</h3><p>统一维护医生和检查项目所属科室</p></div><a class="btn btn-primary" th:href="@{/departments/new}">＋ 新增科室</a></div>
+<div class="table-wrap"><table><thead><tr><th>排序</th><th>科室名称</th><th>科室编码</th><th>说明</th><th>状态</th><th>操作</th></tr></thead><tbody>
+<tr th:each="d:${departments}"><td th:text="${d.sortOrder}"></td><td><b th:text="${d.name}"></b></td><td th:text="${#strings.isEmpty(d.code) ? '-' : d.code}"></td><td th:text="${#strings.isEmpty(d.description) ? '-' : d.description}"></td><td><span class="badge" th:classappend="${d.enabled ? 'status-completed' : 'status-cancelled'}" th:text="${d.enabled ? '启用' : '停用'}"></span></td><td><a class="text-link" th:href="@{/departments/{id}/edit(id=${d.id})}">编辑</a></td></tr>
+</tbody></table></div></section></main></body></html>

@@ -14,9 +14,12 @@ public class Doctor {
     @Column(nullable = false, length = 40)
     private String name;
 
-    @NotBlank(message = "所属科室不能为空")
-    @Column(nullable = false, length = 50)
-    private String department;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @Column(name = "department", nullable = false, length = 50)
+    private String legacyDepartment = "";
 
     @Column(length = 40)
     private String title;
@@ -31,8 +34,26 @@ public class Doctor {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
+    @PrePersist
+    @PreUpdate
+    void syncLegacyDepartment() {
+        if (department != null) {
+            legacyDepartment = department.getName();
+        }
+    }
+
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) {
+        this.department = department;
+        if (department != null) {
+            this.legacyDepartment = department.getName();
+        }
+    }
+    public String getLegacyDepartment() { return legacyDepartment; }
+    public void setLegacyDepartment(String legacyDepartment) { this.legacyDepartment = legacyDepartment; }
+    public String getDepartmentName() {
+        return department == null ? legacyDepartment : department.getName();
+    }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getPhone() { return phone; }

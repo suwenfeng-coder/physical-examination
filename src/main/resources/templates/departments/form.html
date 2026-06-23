@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>科室信息</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar(${department.id == null ? '新增科室' : '编辑科室'})}"></header>
+<section class="panel form-panel"><form th:action="@{/departments/save}" th:object="${department}" method="post"><input type="hidden" th:field="*{id}">
+<div class="form-section"><h3>科室资料</h3><div class="form-grid">
+<label>科室名称 <em>*</em><input th:field="*{name}" placeholder="如：检验科"><small class="field-error" th:errors="*{name}"></small></label>
+<label>科室编码<input th:field="*{code}" placeholder="如：LAB"></label>
+<label>显示排序<input type="number" min="0" th:field="*{sortOrder}"></label>
+<label class="check-label"><input type="checkbox" th:field="*{enabled}"> 启用此科室</label>
+</div><label>科室说明<textarea rows="4" th:field="*{description}" placeholder="科室职责或业务说明"></textarea></label></div>
+<div class="form-actions"><a class="btn" th:href="@{/departments}">取消</a><button class="btn btn-primary">保存科室</button></div></form></section></main></body></html>

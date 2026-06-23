@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>个人体检预约</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('个人体检预约')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel form-panel"><form th:action="@{/appointments/personal}" method="post">
+<div class="form-section"><span class="step">01</span><h3>选择受检人</h3><label>受检人 <em>*</em><select name="patientId" required><option value="">请选择已建档受检人</option><option th:each="p:${patients}" th:value="${p.id}" th:text="${p.name + '　' + p.phone}"></option></select></label><p class="form-tip">未建档？<a th:href="@{/patients/new}">先新增受检人档案</a></p></div>
+<div class="form-section"><span class="step">02</span><h3>预约安排</h3><div class="form-grid">
+<label>体检套餐 <em>*</em><select name="packageId" required><option value="">请选择套餐</option><option th:each="p:${packages}" th:value="${p.id}" th:text="${p.name + '（¥' + p.price + '）'}"></option></select></label>
+<label>预约日期 <em>*</em><input type="date" name="appointmentDate" th:value="${today}" th:min="${today}" required></label>
+<label>主检医生<select name="doctorId"><option value="">暂不指定</option><option th:each="d:${doctors}" th:value="${d.id}" th:text="${d.name + ' · ' + d.departmentName}"></option></select></label>
+<label>备注<input name="remark" maxlength="500" placeholder="选填，如特殊时间要求"></label>
+</div></div><div class="form-actions"><a class="btn" th:href="@{/appointments}">取消</a><button class="btn btn-primary">确认预约</button></div></form></section></main></body></html>
