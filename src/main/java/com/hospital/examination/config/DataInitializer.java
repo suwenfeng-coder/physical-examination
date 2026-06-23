@@ -75,20 +75,26 @@ public class DataInitializer implements CommandLineRunner {
             ));
         }
         migrateLegacyDepartments();
+        migratePackages();
         if (packageRepository.count() == 0) {
             List<CheckupItem> items = itemRepository.findAllOrdered();
             CheckupPackage basic = new CheckupPackage();
             basic.setName("基础健康套餐");
             basic.setDescription("适合常规年度健康筛查");
+            basic.setType(PackageType.PERSONAL);
             basic.setPrice(new BigDecimal("299.00"));
-            basic.setItems(new LinkedHashSet<>(items.stream().limit(5).toList()));
+            var basicItems = items.stream().limit(5).toList();
+            basic.setItems(new LinkedHashSet<>(basicItems));
+            basic.setGuidePrice(sumPrices(basicItems));
             packageRepository.save(basic);
 
             CheckupPackage comprehensive = new CheckupPackage();
             comprehensive.setName("全面健康套餐");
             comprehensive.setDescription("覆盖内科、检验、影像和功能检查");
+            comprehensive.setType(PackageType.ORGANIZATION);
             comprehensive.setPrice(new BigDecimal("599.00"));
             comprehensive.setItems(new LinkedHashSet<>(items));
+            comprehensive.setGuidePrice(sumPrices(items));
             packageRepository.save(comprehensive);
         }
     }
@@ -120,6 +126,35 @@ public class DataInitializer implements CommandLineRunner {
                 item.setDepartment(findOrCreateDepartment(item.getLegacyDepartment()));
             }
         }
+    }
+
+    private void migratePackages() {
+        for (CheckupPackage checkupPackage : packageRepository.findAll()) {
+            boolean changed = false;
+            if (checkupPackage.getType() == null) {
+                checkupPackage.setType(PackageType.PERSONAL);
+                changed = true;
+            }
+            BigDecimal guidePrice = sumPrices(checkupPackage.getItems());
+            if (checkupPackage.getGuidePrice() == null
+                    || checkupPackage.getGuidePrice().compareTo(guidePrice) != 0) {
+                checkupPackage.setGuidePrice(guidePrice);
+                changed = true;
+            }
+            if (changed) {
+                packageRepository.save(checkupPackage);
+            }
+        }
+    }
+
+    private BigDecimal sumPrices(Iterable<CheckupItem> items) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (CheckupItem item : items) {
+            if (item.getPrice() != null) {
+                total = total.add(item.getPrice());
+            }
+        }
+        return total;
     }
 
     private Department findOrCreateDepartment(String name) {

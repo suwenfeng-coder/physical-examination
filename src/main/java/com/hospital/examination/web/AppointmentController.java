@@ -69,7 +69,7 @@ public class AppointmentController {
 
     @GetMapping("/new/personal")
     public String personalForm(Model model) {
-        addFormOptions(model);
+        addFormOptions(model, AppointmentType.PERSONAL);
         model.addAttribute("patients", patientRepository.findAll());
         return "appointments/personal-form";
     }
@@ -94,7 +94,7 @@ public class AppointmentController {
 
     @GetMapping("/new/organization")
     public String organizationForm(Model model) {
-        addFormOptions(model);
+        addFormOptions(model, AppointmentType.ORGANIZATION);
         return "appointments/organization-form";
     }
 
@@ -167,8 +167,11 @@ public class AppointmentController {
         return "redirect:/appointments/" + id;
     }
 
-    private void addFormOptions(Model model) {
-        model.addAttribute("packages", packageRepository.findByEnabledTrueOrderByIdDesc());
+    private void addFormOptions(Model model, AppointmentType type) {
+        model.addAttribute("packages", packageRepository.findByEnabledTrueAndTypeOrderByIdDesc(
+                type == AppointmentType.PERSONAL
+                        ? com.hospital.examination.model.PackageType.PERSONAL
+                        : com.hospital.examination.model.PackageType.ORGANIZATION));
         model.addAttribute("doctors", doctorRepository.findEnabledOrdered());
         model.addAttribute("today", LocalDate.now());
     }

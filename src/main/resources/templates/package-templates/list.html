@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>基础套餐模板</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('基础套餐模板')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel"><div class="panel-head"><div><h3>基础套餐模板</h3><p>预先维护常用项目组合，新建套餐时可直接套用并继续追加项目</p></div><a class="btn btn-primary" th:href="@{/package-templates/new}">＋ 新增模板</a></div>
+<div class="card-list"><article class="package-card" th:each="t:${templates}">
+<div class="package-main"><div class="badge-row"><span class="badge type-badge" th:text="${t.type.label}"></span><span class="badge" th:classappend="${t.enabled ? 'status-completed' : 'status-cancelled'}" th:text="${t.enabled ? '启用' : '停用'}"></span></div><h3 th:text="${t.name}"></h3><p th:text="${t.description}"></p><div class="chips"><span th:each="i:${t.items}" th:text="${i.name}"></span></div></div>
+<div class="package-side"><strong th:text="${'¥ ' + t.guidePrice}"></strong><small>项目指导价合计</small><small th:text="${t.items.size() + ' 个检查项目'}"></small><a class="btn" th:href="@{/package-templates/{id}/edit(id=${t.id})}">编辑模板</a></div>
+</article><div class="empty" th:if="${templates.isEmpty()}">暂无基础套餐模板</div></div></section></main></body></html>
