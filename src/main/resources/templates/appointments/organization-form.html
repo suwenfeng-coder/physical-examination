@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>单位体检预约</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('单位体检预约')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel form-panel"><form th:action="@{/appointments/organization}" method="post" enctype="multipart/form-data">
+<div class="form-section"><span class="step">01</span><h3>单位信息</h3><div class="form-grid">
+<label>单位名称 <em>*</em><input name="organizationName" maxlength="120" required></label><label>统一社会信用代码<input name="creditCode" maxlength="40" placeholder="选填"></label>
+<label>联系人 <em>*</em><input name="contactName" maxlength="40" required></label><label>联系人手机号 <em>*</em><input name="contactPhone" maxlength="11" pattern="1[0-9]{10}" required></label>
+<label class="span-2">单位地址<input name="address" maxlength="200" placeholder="选填"></label></div></div>
+<div class="form-section"><span class="step">02</span><h3>体检安排</h3><div class="form-grid">
+<label>体检套餐 <em>*</em><select name="packageId" required><option value="">请选择套餐</option><option th:each="p:${packages}" th:value="${p.id}" th:text="${p.name + '（¥' + p.price + ' / 人）'}"></option></select></label>
+<label>预约日期 <em>*</em><input type="date" name="appointmentDate" th:value="${today}" th:min="${today}" required></label>
+<label>主检医生<select name="doctorId"><option value="">暂不指定</option><option th:each="d:${doctors}" th:value="${d.id}" th:text="${d.name + ' · ' + d.departmentName}"></option></select></label>
+<label>备注<input name="remark" maxlength="500" placeholder="选填，如分批到院安排"></label></div></div>
+<div class="form-section"><span class="step">03</span><h3>导入参检人</h3><div class="import-box"><div><b>使用标准 Excel 模板批量导入</b><p>支持一次导入最多 1000 人。系统会关联已有档案，新人员自动建档。</p></div><a class="btn" th:href="@{/appointments/organization/template}">↓ 下载导入模板</a></div>
+<label class="file-field">参检人 Excel<input type="file" name="participantFile" accept=".xlsx"><small>可暂不上传，预约创建后仍可在详情页一键导入。</small></label></div>
+<div class="form-actions"><a class="btn" th:href="@{/appointments}">取消</a><button class="btn btn-primary">确认单位预约</button></div></form></section></main></body></html>

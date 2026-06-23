@@ -8,10 +8,12 @@
     </a>
     <nav>
         <a th:href="@{/}" th:classappend="${requestUri == '/'} ? 'active'"><span>⌂</span> 工作台</a>
+        <a th:href="@{/appointments}" th:classappend="${#strings.startsWith(requestUri, '/appointments')} ? 'active'"><span>◷</span> 体检预约</a>
         <a th:href="@{/orders}" th:classappend="${#strings.startsWith(requestUri, '/orders')} ? 'active'"><span>▣</span> 体检管理</a>
         <a th:href="@{/patients}" th:classappend="${#strings.startsWith(requestUri, '/patients')} ? 'active'"><span>♙</span> 受检人管理</a>
         <a th:href="@{/packages}" th:classappend="${#strings.startsWith(requestUri, '/packages')} ? 'active'"><span>▤</span> 套餐管理</a>
         <a th:href="@{/items}" th:classappend="${#strings.startsWith(requestUri, '/items')} ? 'active'"><span>◇</span> 检查项目</a>
+        <a th:href="@{/departments}" th:classappend="${#strings.startsWith(requestUri, '/departments')} ? 'active'"><span>⌘</span> 科室管理</a>
         <a th:href="@{/doctors}" th:classappend="${#strings.startsWith(requestUri, '/doctors')} ? 'active'"><span>♧</span> 医生管理</a>
     </nav>
     <div class="sidebar-footer">
@@ -26,7 +28,7 @@
         <h1 th:text="${title}">页面标题</h1>
         <p th:text="${#temporals.format(#temporals.createNow(), 'yyyy年MM月dd日 EEEE')}"></p>
     </div>
-    <a class="btn btn-primary" th:href="@{/orders/new}">＋ 新建体检登记</a>
+    <a class="btn btn-primary" th:href="@{/appointments/new/personal}">＋ 新建体检预约</a>
 </header>
 
 <div th:fragment="alerts">

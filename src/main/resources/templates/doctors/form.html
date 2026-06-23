@@ -4,7 +4,12 @@
 <section class="panel form-panel"><form th:action="@{/doctors/save}" th:object="${doctor}" method="post"><input type="hidden" th:field="*{id}">
 <div class="form-section"><h3>医生资料</h3><div class="form-grid">
 <label>姓名 <em>*</em><input th:field="*{name}"><small class="field-error" th:errors="*{name}"></small></label>
-<label>所属科室 <em>*</em><input th:field="*{department}"><small class="field-error" th:errors="*{department}"></small></label>
+<label>所属科室 <em>*</em>
+<span class="lookup-select" data-department-lookup>
+<input type="text" class="lookup-input" autocomplete="off" placeholder="输入科室名称实时查询" th:value="${doctor.department == null ? doctor.legacyDepartment : doctor.department.name}">
+<input type="hidden" name="departmentId" class="lookup-id" th:value="${doctor.department == null ? '' : doctor.department.id}">
+<span class="lookup-menu"></span>
+</span><small class="field-error" th:errors="*{department}"></small></label>
 <label>职称<input th:field="*{title}" placeholder="如：主任医师"></label><label>联系电话<input th:field="*{phone}"></label>
 <label class="check-label"><input type="checkbox" th:field="*{enabled}"> 允许安排体检</label></div></div>
-<div class="form-actions"><a class="btn" th:href="@{/doctors}">取消</a><button class="btn btn-primary">保存</button></div></form></section></main></body></html>
+<div class="form-actions"><a class="btn" th:href="@{/doctors}">取消</a><button class="btn btn-primary">保存</button></div></form></section></main><script th:src="@{/js/department-lookup.js}"></script></body></html>

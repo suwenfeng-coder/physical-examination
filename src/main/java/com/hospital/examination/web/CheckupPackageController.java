@@ -35,14 +35,14 @@ public class CheckupPackageController {
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("checkupPackage", new CheckupPackage());
-        model.addAttribute("allItems", itemRepository.findAllByOrderByDepartmentAscNameAsc());
+        model.addAttribute("allItems", itemRepository.findAllOrdered());
         return "packages/form";
     }
 
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("checkupPackage", packageRepository.findById(id).orElseThrow());
-        model.addAttribute("allItems", itemRepository.findAllByOrderByDepartmentAscNameAsc());
+        model.addAttribute("allItems", itemRepository.findAllOrdered());
         return "packages/form";
     }
 
@@ -55,7 +55,7 @@ public class CheckupPackageController {
             bindingResult.reject("items.required", "请至少选择一个检查项目");
         }
         if (bindingResult.hasErrors()) {
-            model.addAttribute("allItems", itemRepository.findAllByOrderByDepartmentAscNameAsc());
+            model.addAttribute("allItems", itemRepository.findAllOrdered());
             return "packages/form";
         }
         List<CheckupItem> selectedItems = itemRepository.findAllById(itemIds);
