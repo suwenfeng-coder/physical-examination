@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>体检单详情</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('体检单详情')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="order-summary">
+<div><span class="eyebrow">EXAMINATION ORDER</span><h2 th:text="${order.orderNo}"></h2><p th:text="${order.checkupPackage.name + ' · ' + #temporals.format(order.examDate, 'yyyy年MM月dd日')}"></p></div>
+<div class="summary-actions"><span class="badge large" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span><a class="btn" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">打印报告</a></div>
+</section>
+<section class="info-grid">
+<div class="panel info-card"><span>受检人</span><strong th:text="${order.patient.name}"></strong><p th:text="${order.patient.gender.label + ' · ' + order.patient.age + '岁 · ' + order.patient.phone}"></p></div>
+<div class="panel info-card"><span>主检医生</span><strong th:text="${order.doctor == null ? '暂未指定' : order.doctor.name}"></strong><p th:text="${order.doctor == null ? '-' : order.doctor.department + ' · ' + order.doctor.title}"></p></div>
+<div class="panel info-card"><span>套餐金额</span><strong th:text="${'¥ ' + order.amount}"></strong><p th:text="${order.results.size() + ' 个检查项目'}"></p></div>
+</section>
+<section class="panel">
+<div class="panel-head"><div><h3>检查结果录入</h3><p>逐项填写检查数据并判断是否异常</p></div></div>
+<form th:action="@{/orders/{id}/results(id=${order.id})}" method="post">
+<div class="table-wrap"><table class="result-table"><thead><tr><th>检查项目</th><th>科室</th><th>参考范围</th><th>检查结果</th><th>判定</th><th>备注</th></tr></thead><tbody>
+<tr th:each="r:${order.results}"><input type="hidden" name="resultIds" th:value="${r.id}">
+<td><b th:text="${r.item.name}"></b></td><td th:text="${r.item.department}"></td><td><span th:text="${#strings.isEmpty(r.item.referenceRange) ? '-' : r.item.referenceRange}"></span><small th:if="${!#strings.isEmpty(r.item.unit)}" th:text="${r.item.unit}"></small></td>
+<td><input name="resultValues" th:value="${r.resultValue}" placeholder="填写结果"></td>
+<td><select name="resultStatuses"><option th:each="s:${resultStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == r.status}"></option></select></td>
+<td><input name="remarks" th:value="${r.remark}" placeholder="选填"></td></tr></tbody></table></div>
+<div class="form-actions" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}"><button class="btn btn-primary">保存检查结果</button></div></form>
+</section>
+<section class="panel report-editor" th:if="${order.status.name() != 'CANCELLED'}">
+<div class="panel-head"><div><h3>总检结论</h3><p>所有项目完成后生成体检报告</p></div></div>
+<form th:action="@{/orders/{id}/finish(id=${order.id})}" method="post"><div class="form-grid">
+<label>健康结论<textarea name="conclusion" rows="4" th:text="${order.conclusion}" placeholder="综合各项检查结果填写健康结论" required></textarea></label>
+<label>医生建议<textarea name="advice" rows="4" th:text="${order.advice}" placeholder="填写复查、生活方式等建议" required></textarea></label></div>
+<div class="form-actions"><button class="btn btn-primary" th:if="${order.status.name() != 'COMPLETED'}">完成体检并生成报告</button><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看体检报告</a></div></form>
+</section>
+<form class="danger-zone" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}" th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post" onsubmit="return confirm('确定取消该体检单吗？')"><button class="text-danger">取消此体检单</button></form>
+</main></body></html>

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${order.patient.name + '的体检报告'}"></title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body class="report-page">
+<div class="print-toolbar"><a class="btn" th:href="@{/orders/{id}(id=${order.id})}">← 返回体检单</a><button class="btn btn-primary" onclick="window.print()">打印 / 导出 PDF</button></div>
+<main class="report-paper">
+<header class="report-head"><div class="report-logo">✚</div><div><h1>健康体检报告</h1><p>HEALTH EXAMINATION REPORT</p></div><div class="report-no"><span>体检编号</span><b th:text="${order.orderNo}"></b></div></header>
+<section class="report-patient"><div><span>姓名</span><b th:text="${order.patient.name}"></b></div><div><span>性别</span><b th:text="${order.patient.gender.label}"></b></div><div><span>年龄</span><b th:text="${order.patient.age + ' 岁'}"></b></div><div><span>体检日期</span><b th:text="${#temporals.format(order.examDate, 'yyyy-MM-dd')}"></b></div><div><span>联系电话</span><b th:text="${order.patient.phone}"></b></div><div><span>体检套餐</span><b th:text="${order.checkupPackage.name}"></b></div></section>
+<section class="report-section"><h2>检查结果</h2><table><thead><tr><th>序号</th><th>检查项目</th><th>结果</th><th>参考范围</th><th>判定</th><th>备注</th></tr></thead><tbody>
+<tr th:each="r,s:${order.results}"><td th:text="${s.count}"></td><td th:text="${r.item.name}"></td><td><b th:text="${#strings.isEmpty(r.resultValue) ? '-' : r.resultValue}"></b><span th:text="${r.item.unit}"></span></td><td th:text="${#strings.isEmpty(r.item.referenceRange) ? '-' : r.item.referenceRange}"></td><td><span class="badge" th:classappend="${r.status.name() == 'NORMAL' ? 'status-completed' : (r.status.name() == 'ABNORMAL' ? 'status-cancelled' : 'status-registered')}" th:text="${r.status.label}"></span></td><td th:text="${r.remark}"></td></tr>
+</tbody></table></section>
+<section class="report-conclusion"><div><h2>总检结论</h2><p th:text="${order.conclusion}"></p></div><div><h2>健康建议</h2><p th:text="${order.advice}"></p></div></section>
+<footer class="report-footer"><div><span>主检医生</span><b th:text="${order.doctor == null ? '系统管理员' : order.doctor.name}"></b></div><div><span>报告日期</span><b th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"></b></div><p>本报告仅对本次体检负责，异常结果请结合临床并遵医嘱复查。</p></footer>
+</main></body></html>

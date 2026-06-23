@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>套餐管理</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('套餐管理')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel"><div class="panel-head"><div><h3>体检套餐</h3><p>组合标准项目并设定套餐价格</p></div><a class="btn btn-primary" th:href="@{/packages/new}">＋ 新增套餐</a></div>
+<div class="card-list"><article class="package-card" th:each="p:${packages}">
+<div class="package-main"><span class="badge" th:classappend="${p.enabled ? 'status-completed' : 'status-cancelled'}" th:text="${p.enabled ? '启用' : '停用'}"></span><h3 th:text="${p.name}"></h3><p th:text="${p.description}"></p>
+<div class="chips"><span th:each="i:${p.items}" th:text="${i.name}"></span></div></div>
+<div class="package-side"><strong th:text="${'¥ ' + p.price}"></strong><small th:text="${p.items.size() + ' 个检查项目'}"></small><a class="btn" th:href="@{/packages/{id}/edit(id=${p.id})}">编辑套餐</a></div>
+</article></div></section></main></body></html>

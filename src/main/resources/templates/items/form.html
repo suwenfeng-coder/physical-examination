@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>检查项目</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar(${item.id == null ? '新增检查项目' : '编辑检查项目'})}"></header>
+<section class="panel form-panel"><form th:action="@{/items/save}" th:object="${item}" method="post"><input type="hidden" th:field="*{id}">
+<div class="form-section"><h3>项目信息</h3><div class="form-grid">
+<label>项目名称 <em>*</em><input th:field="*{name}"><small class="field-error" th:errors="*{name}"></small></label>
+<label>所属科室 <em>*</em><input th:field="*{department}"><small class="field-error" th:errors="*{department}"></small></label>
+<label>参考范围<input th:field="*{referenceRange}" placeholder="如：3.9-6.1"></label><label>单位<input th:field="*{unit}" placeholder="如：mmol/L"></label>
+<label>单项价格 <em>*</em><input type="number" min="0" step="0.01" th:field="*{price}"><small class="field-error" th:errors="*{price}"></small></label>
+</div><label>项目说明<textarea rows="3" th:field="*{description}"></textarea></label></div>
+<div class="form-actions"><a class="btn" th:href="@{/items}">取消</a><button class="btn btn-primary">保存</button></div></form></section></main></body></html>

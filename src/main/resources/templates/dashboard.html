@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>工作台 - 安康体检</title><link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('工作台')}"></header>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+    <section class="hero">
+        <div><span class="eyebrow">HEALTH MANAGEMENT</span><h2>守护健康，从每一次认真检查开始</h2><p>今日体检任务、报告进度和基础资料一目了然。</p></div>
+        <div class="hero-symbol">✚</div>
+    </section>
+    <section class="stats-grid">
+        <a class="stat-card teal" th:href="@{/orders}"><span>今日体检</span><strong th:text="${todayCount}">0</strong><small>人次</small></a>
+        <a class="stat-card amber" th:href="@{/orders(status='EXAMINING')}"><span>检查进行中</span><strong th:text="${examiningCount}">0</strong><small>份</small></a>
+        <a class="stat-card blue" th:href="@{/orders(status='COMPLETED')}"><span>已完成报告</span><strong th:text="${completedCount}">0</strong><small>份</small></a>
+        <a class="stat-card violet" th:href="@{/patients}"><span>受检人档案</span><strong th:text="${patientCount}">0</strong><small>人</small></a>
+    </section>
+    <section class="content-grid">
+        <div class="panel">
+            <div class="panel-head"><div><h3>最近体检记录</h3><p>按体检日期展示最新登记</p></div><a th:href="@{/orders}">查看全部 →</a></div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>体检单号</th><th>受检人</th><th>套餐</th><th>日期</th><th>状态</th></tr></thead>
+                    <tbody>
+                    <tr th:each="order : ${recentOrders}">
+                        <td><a th:href="@{/orders/{id}(id=${order.id})}" th:text="${order.orderNo}"></a></td>
+                        <td th:text="${order.patient.name}"></td>
+                        <td th:text="${order.checkupPackage.name}"></td>
+                        <td th:text="${#temporals.format(order.examDate, 'MM-dd')}"></td>
+                        <td><span class="badge" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(recentOrders)}"><td colspan="5" class="empty">暂无体检记录</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="panel quick-panel">
+            <div class="panel-head"><div><h3>快捷入口</h3><p>常用管理功能</p></div></div>
+            <div class="quick-grid">
+                <a th:href="@{/orders/new}"><i>＋</i><b>体检登记</b><small>创建新体检单</small></a>
+                <a th:href="@{/patients/new}"><i>♙</i><b>新增受检人</b><small>建立健康档案</small></a>
+                <a th:href="@{/packages}"><i>▤</i><b>套餐维护</b><small th:text="${packageCount + ' 个套餐'}"></small></a>
+                <a th:href="@{/doctors}"><i>♧</i><b>医生管理</b><small th:text="${doctorCount + ' 位医生'}"></small></a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

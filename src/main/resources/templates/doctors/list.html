@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>医生管理</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('医生管理')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
+<section class="panel"><div class="panel-head"><div><h3>医生列表</h3><p>维护体检主检医生资料</p></div><a class="btn btn-primary" th:href="@{/doctors/new}">＋ 新增医生</a></div>
+<div class="table-wrap"><table><thead><tr><th>姓名</th><th>科室</th><th>职称</th><th>电话</th><th>状态</th><th>操作</th></tr></thead><tbody>
+<tr th:each="d:${doctors}"><td><b th:text="${d.name}"></b></td><td th:text="${d.department}"></td><td th:text="${d.title}"></td><td th:text="${d.phone}"></td><td><span class="badge" th:classappend="${d.enabled ? 'status-completed' : 'status-cancelled'}" th:text="${d.enabled ? '在岗' : '停用'}"></span></td><td><a class="text-link" th:href="@{/doctors/{id}/edit(id=${d.id})}">编辑</a></td></tr>
+</tbody></table></div></section></main></body></html>
