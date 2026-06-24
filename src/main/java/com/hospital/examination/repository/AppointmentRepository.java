@@ -21,6 +21,24 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             left join a.organization organization
             left join a.participants participant
             left join participant.patient patient
+            where (:keyword = ''
+                   or lower(a.appointmentNo) like lower(concat('%', :keyword, '%'))
+                   or lower(coalesce(organization.name, '')) like lower(concat('%', :keyword, '%'))
+                   or lower(coalesce(patient.name, '')) like lower(concat('%', :keyword, '%'))
+                   or coalesce(patient.phone, '') like concat('%', :keyword, '%'))
+              and (:type is null or a.type = :type)
+              and (:status is null or a.status = :status)
+            order by a.appointmentDate desc, a.id desc
+            """)
+    List<Appointment> searchWithFilters(@Param("keyword") String keyword,
+                                        @Param("type") AppointmentType type,
+                                        @Param("status") AppointmentStatus status);
+
+    @Query("""
+            select distinct a from Appointment a
+            left join a.organization organization
+            left join a.participants participant
+            left join participant.patient patient
             where lower(a.appointmentNo) like lower(concat('%', :keyword, '%'))
                or lower(coalesce(organization.name, '')) like lower(concat('%', :keyword, '%'))
                or lower(coalesce(patient.name, '')) like lower(concat('%', :keyword, '%'))

@@ -14,9 +14,12 @@ import com.hospital.examination.service.ExamOrderService;
 import com.hospital.examination.service.ReportAttachmentService;
 import com.hospital.examination.service.ReportPdfService;
 import com.hospital.examination.model.Gender;
+import com.hospital.examination.model.AppointmentStatus;
 import com.hospital.examination.model.OrderStatus;
+import com.hospital.examination.model.PackageType;
 import com.hospital.examination.model.Patient;
 import com.hospital.examination.model.ResultStatus;
+import com.hospital.examination.repository.AppointmentRepository;
 import com.hospital.examination.repository.DoctorRepository;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
@@ -50,6 +53,9 @@ class PhysicalExaminationApplicationTests {
 
     @Autowired
     private AppointmentService appointmentService;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     @Autowired
     private CheckupPackageRepository checkupPackageRepository;
@@ -179,6 +185,41 @@ class PhysicalExaminationApplicationTests {
         assertEquals(1, saved.getParticipants().size());
         assertEquals("研发部", saved.getParticipants().get(0).getDepartment());
         assertTrue(patientRepository.findByIdCard("310101199005201234").isPresent());
+    }
+
+    @Test
+    void appointmentListFiltersCancelledStatusTogetherWithKeyword() {
+        var personalPackage = checkupPackageRepository.findByEnabledTrueOrderByIdDesc().stream()
+                .filter(item -> item.getType() == PackageType.PERSONAL)
+                .findFirst()
+                .orElseThrow();
+
+        Patient cancelledPatient = new Patient();
+        cancelledPatient.setName("预约筛选取消人员");
+        cancelledPatient.setGender(Gender.MALE);
+        cancelledPatient.setBirthday(LocalDate.of(1991, 1, 1));
+        cancelledPatient.setPhone("13500000001");
+        cancelledPatient = patientRepository.save(cancelledPatient);
+
+        Patient bookedPatient = new Patient();
+        bookedPatient.setName("预约筛选未取消人员");
+        bookedPatient.setGender(Gender.FEMALE);
+        bookedPatient.setBirthday(LocalDate.of(1992, 2, 2));
+        bookedPatient.setPhone("13500000002");
+        bookedPatient = patientRepository.save(bookedPatient);
+
+        var cancelled = appointmentService.createPersonal(cancelledPatient.getId(), personalPackage.getId(),
+                null, LocalDate.now().plusDays(2), null);
+        appointmentService.cancel(cancelled.getId());
+        appointmentService.createPersonal(bookedPatient.getId(), personalPackage.getId(),
+                null, LocalDate.now().plusDays(2), null);
+
+        var results = appointmentRepository.searchWithFilters("预约筛选", null, AppointmentStatus.CANCELLED);
+
+        assertEquals(1, results.size());
+        assertEquals(AppointmentStatus.CANCELLED, results.get(0).getStatus());
+        var savedCancelled = appointmentService.get(results.get(0).getId());
+        assertEquals("预约筛选取消人员", savedCancelled.getParticipants().get(0).getPatient().getName());
     }
 
     @Test

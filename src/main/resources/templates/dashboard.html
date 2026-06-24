@@ -48,6 +48,44 @@
             </div>
         </div>
     </section>
+    <section class="panel ai-service" aria-labelledby="ai-service-title">
+        <div class="ai-service-side">
+            <span class="eyebrow">AI SERVICE ASSISTANT</span>
+            <h3 id="ai-service-title">AI智能客服</h3>
+            <p>面向患者、医生、护士及医院工作人员，提供医疗服务咨询和系统操作指引。</p>
+            <div class="ai-service-principles">
+                <span>安全第一</span>
+                <span>隐私保护</span>
+                <span>转人工支持</span>
+            </div>
+        </div>
+        <div class="ai-chat" data-ai-service>
+            <div class="ai-chat-toolbar">
+                <div>
+                    <b>安康客服助手</b>
+                    <small>医疗服务咨询 · 系统使用帮助</small>
+                </div>
+                <span class="ai-online">在线</span>
+            </div>
+            <div class="ai-chat-messages" aria-live="polite">
+                <div class="ai-message assistant">
+                    您好，我是医疗系统智能客服助手。可以协助您了解挂号预约、缴费、科室医生排班、检查检验、住院流程、医保咨询和系统操作。涉及诊断、治疗或隐私信息查询时，我会优先保障安全与隐私。
+                </div>
+            </div>
+            <div class="ai-quick-actions" aria-label="快捷问题">
+                <button type="button" data-question="如何预约体检">预约体检</button>
+                <button type="button" data-question="查询医生排班">医生排班</button>
+                <button type="button" data-question="检查检验流程">检查检验流程</button>
+                <button type="button" data-question="医保咨询">医保咨询</button>
+                <button type="button" data-question="转人工客服">转人工</button>
+            </div>
+            <form class="ai-chat-form">
+                <input type="text" name="question" autocomplete="off" placeholder="请输入您的问题，如：如何缴费、住院流程、科室信息">
+                <button class="btn btn-primary" type="submit">发送</button>
+            </form>
+        </div>
+    </section>
 </main>
+<script th:src="@{/js/ai-customer-service.js}"></script>
 </body>
 </html>

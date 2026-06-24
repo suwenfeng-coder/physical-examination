@@ -48,17 +48,8 @@ public class AppointmentController {
                        @RequestParam(required = false) AppointmentType type,
                        @RequestParam(required = false) AppointmentStatus status,
                        Model model) {
-        if (!keyword.isBlank()) {
-            model.addAttribute("appointments", appointmentRepository.search(keyword));
-        } else if (type != null) {
-            model.addAttribute("appointments",
-                    appointmentRepository.findByTypeOrderByAppointmentDateDescIdDesc(type));
-        } else if (status != null) {
-            model.addAttribute("appointments",
-                    appointmentRepository.findByStatusOrderByAppointmentDateDescIdDesc(status));
-        } else {
-            model.addAttribute("appointments", appointmentRepository.findAllByOrderByAppointmentDateDescIdDesc());
-        }
+        model.addAttribute("appointments",
+                appointmentRepository.searchWithFilters(keyword.trim(), type, status));
         model.addAttribute("keyword", keyword);
         model.addAttribute("selectedType", type);
         model.addAttribute("selectedStatus", status);
@@ -146,6 +137,18 @@ public class AppointmentController {
         return "redirect:/appointments/" + id;
     }
 
+    @PostMapping("/{id}/participants/{participantId}/check-in")
+    public String checkIn(@PathVariable Long id, @PathVariable Long participantId,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            var order = appointmentService.checkIn(id, participantId);
+            redirectAttributes.addFlashAttribute("success", "签到成功，体检单号：" + order.getOrderNo());
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/appointments/" + id;
+    }
+
     @GetMapping("/organization/template")
     public ResponseEntity<byte[]> downloadTemplate() {
         byte[] content = appointmentService.createImportTemplate();
@@ -161,9 +164,14 @@ public class AppointmentController {
     }
 
     @PostMapping("/{id}/cancel")
-    public String cancel(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String cancel(@PathVariable Long id,
+                         @RequestParam(required = false) String redirect,
+                         RedirectAttributes redirectAttributes) {
         appointmentService.cancel(id);
         redirectAttributes.addFlashAttribute("success", "预约已取消");
+        if (redirect != null && redirect.startsWith("/appointments")) {
+            return "redirect:" + redirect;
+        }
         return "redirect:/appointments/" + id;
     }
 

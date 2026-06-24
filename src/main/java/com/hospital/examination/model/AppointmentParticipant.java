@@ -24,6 +24,10 @@ public class AppointmentParticipant {
     @Column(length = 40)
     private String employeeNo;
 
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "exam_order_id", unique = true)
+    private ExamOrder examOrder;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Appointment getAppointment() { return appointment; }
@@ -34,4 +38,6 @@ public class AppointmentParticipant {
     public void setDepartment(String department) { this.department = department; }
     public String getEmployeeNo() { return employeeNo; }
     public void setEmployeeNo(String employeeNo) { this.employeeNo = employeeNo; }
+    public ExamOrder getExamOrder() { return examOrder; }
+    public void setExamOrder(ExamOrder examOrder) { this.examOrder = examOrder; }
 }

@@ -5,6 +5,7 @@ import com.hospital.examination.model.ResultStatus;
 import com.hospital.examination.repository.*;
 import com.hospital.examination.service.ExternalResultSyncService;
 import com.hospital.examination.service.ExamOrderService;
+import com.hospital.examination.service.ExamOrderPrinter;
 import com.hospital.examination.service.ReportAttachmentService;
 import com.hospital.examination.service.ReportPdfService;
 import jakarta.servlet.http.HttpSession;
@@ -35,13 +36,15 @@ public class ExamOrderController {
     private final ReportAttachmentService attachmentService;
     private final ReportPdfService pdfService;
     private final ExternalResultSyncService externalResultSyncService;
+    private final ExamOrderPrinter examOrderPrinter;
 
     public ExamOrderController(ExamOrderRepository orderRepository, PatientRepository patientRepository,
                                CheckupPackageRepository packageRepository, DoctorRepository doctorRepository,
                                ExamOrderService orderService,
                                ReportAttachmentService attachmentService,
                                ReportPdfService pdfService,
-                               ExternalResultSyncService externalResultSyncService) {
+                               ExternalResultSyncService externalResultSyncService,
+                               ExamOrderPrinter examOrderPrinter) {
         this.orderRepository = orderRepository;
         this.patientRepository = patientRepository;
         this.packageRepository = packageRepository;
@@ -50,6 +53,7 @@ public class ExamOrderController {
         this.attachmentService = attachmentService;
         this.pdfService = pdfService;
         this.externalResultSyncService = externalResultSyncService;
+        this.examOrderPrinter = examOrderPrinter;
     }
 
     @GetMapping
@@ -204,6 +208,24 @@ public class ExamOrderController {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/orders/" + id;
+    }
+
+    @GetMapping("/{id}/print-form")
+    public String printForm(@PathVariable Long id, Model model) {
+        model.addAttribute("order", orderService.get(id));
+        return "orders/print-form";
+    }
+
+    @PostMapping("/{id}/print")
+    public String print(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        var order = orderService.get(id);
+        try {
+            examOrderPrinter.print(order);
+            redirectAttributes.addFlashAttribute("success", "已提交打印任务：" + order.getOrderNo());
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("error", "提交打印失败：" + ex.getMessage());
+        }
+        return "redirect:/orders/" + id + "/print-form";
     }
 
     @GetMapping("/{id}/report")
