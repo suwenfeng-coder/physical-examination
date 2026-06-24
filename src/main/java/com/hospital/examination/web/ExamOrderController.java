@@ -3,13 +3,24 @@ package com.hospital.examination.web;
 import com.hospital.examination.model.OrderStatus;
 import com.hospital.examination.model.ResultStatus;
 import com.hospital.examination.repository.*;
+import com.hospital.examination.service.ExternalResultSyncService;
 import com.hospital.examination.service.ExamOrderService;
+import com.hospital.examination.service.ReportAttachmentService;
+import com.hospital.examination.service.ReportPdfService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -21,15 +32,24 @@ public class ExamOrderController {
     private final CheckupPackageRepository packageRepository;
     private final DoctorRepository doctorRepository;
     private final ExamOrderService orderService;
+    private final ReportAttachmentService attachmentService;
+    private final ReportPdfService pdfService;
+    private final ExternalResultSyncService externalResultSyncService;
 
     public ExamOrderController(ExamOrderRepository orderRepository, PatientRepository patientRepository,
                                CheckupPackageRepository packageRepository, DoctorRepository doctorRepository,
-                               ExamOrderService orderService) {
+                               ExamOrderService orderService,
+                               ReportAttachmentService attachmentService,
+                               ReportPdfService pdfService,
+                               ExternalResultSyncService externalResultSyncService) {
         this.orderRepository = orderRepository;
         this.patientRepository = patientRepository;
         this.packageRepository = packageRepository;
         this.doctorRepository = doctorRepository;
         this.orderService = orderService;
+        this.attachmentService = attachmentService;
+        this.pdfService = pdfService;
+        this.externalResultSyncService = externalResultSyncService;
     }
 
     @GetMapping
@@ -68,9 +88,12 @@ public class ExamOrderController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, HttpSession session, Model model) {
         model.addAttribute("order", orderService.get(id));
         model.addAttribute("resultStatuses", ResultStatus.values());
+        model.addAttribute("reviewers", doctorRepository.findEnabledOrdered());
+        model.addAttribute("externalSyncConfigured", externalResultSyncService.isConfigured());
+        model.addAttribute("canReview", canReview(session));
         return "orders/detail";
     }
 
@@ -81,18 +104,92 @@ public class ExamOrderController {
                               @RequestParam List<ResultStatus> resultStatuses,
                               @RequestParam List<String> remarks,
                               RedirectAttributes redirectAttributes) {
-        orderService.saveResults(id, resultIds, resultValues, resultStatuses, remarks);
-        redirectAttributes.addFlashAttribute("success", "检查结果已保存");
+        try {
+            orderService.saveResults(id, resultIds, resultValues, resultStatuses, remarks);
+            redirectAttributes.addFlashAttribute("success", "检查结果已保存");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/orders/" + id;
     }
 
-    @PostMapping("/{id}/finish")
-    public String finish(@PathVariable Long id, @RequestParam String conclusion,
-                         @RequestParam String advice, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{id}/submit-review")
+    public String submitReview(@PathVariable Long id, @RequestParam String conclusion,
+                               @RequestParam String advice, RedirectAttributes redirectAttributes) {
         try {
-            orderService.finish(id, conclusion, advice);
-            redirectAttributes.addFlashAttribute("success", "体检报告已完成");
-        } catch (IllegalStateException ex) {
+            orderService.submitForReview(id, conclusion, advice);
+            redirectAttributes.addFlashAttribute("success", "体检报告已提交审核");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/orders/" + id;
+    }
+
+    @PostMapping("/{id}/approve")
+    public String approve(@PathVariable Long id, @RequestParam Long reviewerId,
+                          @RequestParam(defaultValue = "") String reviewComment,
+                          HttpSession session,
+                          RedirectAttributes redirectAttributes) {
+        try {
+            requireReviewPermission(session);
+            orderService.approve(id, reviewerId, reviewComment);
+            redirectAttributes.addFlashAttribute("success", "审核完成，已发送报告领取短信");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/orders/" + id;
+    }
+
+    @PostMapping("/{id}/reject")
+    public String reject(@PathVariable Long id, @RequestParam Long reviewerId,
+                         @RequestParam String reviewComment,
+                         HttpSession session,
+                         RedirectAttributes redirectAttributes) {
+        try {
+            requireReviewPermission(session);
+            orderService.reject(id, reviewerId, reviewComment);
+            redirectAttributes.addFlashAttribute("success", "报告已退回修改");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/orders/" + id;
+    }
+
+    @PostMapping("/{id}/attachments")
+    public String uploadAttachment(@PathVariable Long id, @RequestParam("file") MultipartFile file,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            attachmentService.store(orderService.get(id), file);
+            redirectAttributes.addFlashAttribute("success", "影像附件已上传");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/orders/" + id;
+    }
+
+    @GetMapping("/{orderId}/attachments/{attachmentId}")
+    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long orderId,
+                                                       @PathVariable Long attachmentId) {
+        var attachment = attachmentService.get(attachmentId);
+        if (!attachment.getExamOrder().getId().equals(orderId)) {
+            throw new IllegalArgumentException("附件不属于当前体检报告");
+        }
+        Resource resource = attachmentService.load(attachment);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(attachment.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(attachment.getOriginalName(), StandardCharsets.UTF_8)
+                        .build().toString())
+                .contentLength(attachment.getSize())
+                .body(resource);
+    }
+
+    @PostMapping("/{id}/sync-results")
+    public String syncResults(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            int count = externalResultSyncService.sync(orderService.get(id));
+            redirectAttributes.addFlashAttribute("success", "外部检查结果同步完成，更新 " + count + " 项");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/orders/" + id;
@@ -111,7 +208,38 @@ public class ExamOrderController {
 
     @GetMapping("/{id}/report")
     public String report(@PathVariable Long id, Model model) {
-        model.addAttribute("order", orderService.get(id));
+        var order = orderService.get(id);
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            return "redirect:/orders/" + id;
+        }
+        model.addAttribute("order", order);
         return "orders/report";
+    }
+
+    @GetMapping("/{id}/report.pdf")
+    public ResponseEntity<byte[]> reportPdf(@PathVariable Long id) {
+        var order = orderService.get(id);
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw new IllegalStateException("报告审核完成后才可导出 PDF");
+        }
+        byte[] pdf = pdfService.create(order);
+        String filename = order.getOrderNo() + "-" + order.getPatient().getName() + "-体检报告.pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(filename, StandardCharsets.UTF_8).build().toString())
+                .contentLength(pdf.length)
+                .body(pdf);
+    }
+
+    private boolean canReview(HttpSession session) {
+        Object role = session.getAttribute("LOGIN_ROLE");
+        return "ADMIN".equals(role) || "DOCTOR".equals(role);
+    }
+
+    private void requireReviewPermission(HttpSession session) {
+        if (!canReview(session)) {
+            throw new IllegalStateException("当前账号没有体检报告审核权限");
+        }
     }
 }

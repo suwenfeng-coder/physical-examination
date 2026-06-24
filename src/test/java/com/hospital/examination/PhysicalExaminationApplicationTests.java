@@ -10,6 +10,14 @@ import com.hospital.examination.repository.CheckupPackageRepository;
 import com.hospital.examination.repository.PatientRepository;
 import com.hospital.examination.repository.UserAccountRepository;
 import com.hospital.examination.service.AppointmentService;
+import com.hospital.examination.service.ExamOrderService;
+import com.hospital.examination.service.ReportAttachmentService;
+import com.hospital.examination.service.ReportPdfService;
+import com.hospital.examination.model.Gender;
+import com.hospital.examination.model.OrderStatus;
+import com.hospital.examination.model.Patient;
+import com.hospital.examination.model.ResultStatus;
+import com.hospital.examination.repository.DoctorRepository;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +26,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.util.Collections;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -48,6 +57,18 @@ class PhysicalExaminationApplicationTests {
     @Autowired
     private PatientRepository patientRepository;
 
+    @Autowired
+    private DoctorRepository doctorRepository;
+
+    @Autowired
+    private ExamOrderService examOrderService;
+
+    @Autowired
+    private ReportAttachmentService reportAttachmentService;
+
+    @Autowired
+    private ReportPdfService reportPdfService;
+
     @Test
     void contextLoads() {
     }
@@ -66,7 +87,7 @@ class PhysicalExaminationApplicationTests {
                 "/", "/patients", "/patients/new", "/doctors", "/doctors/new",
                 "/items", "/items/new", "/departments", "/departments/new",
                 "/packages", "/packages/new", "/package-templates", "/package-templates/new",
-                "/orders", "/orders/new",
+                "/orders", "/orders/new", "/reports",
                 "/appointments", "/appointments/new/personal", "/appointments/new/organization",
                 "/appointments/organization/template"
         };
@@ -158,5 +179,51 @@ class PhysicalExaminationApplicationTests {
         assertEquals(1, saved.getParticipants().size());
         assertEquals("研发部", saved.getParticipants().get(0).getDepartment());
         assertTrue(patientRepository.findByIdCard("310101199005201234").isPresent());
+    }
+
+    @Test
+    void reportCanBeEnteredUploadedReviewedNotifiedAndExportedAsPdf() throws Exception {
+        Patient patient = new Patient();
+        patient.setName("报告流程测试");
+        patient.setGender(Gender.FEMALE);
+        patient.setBirthday(LocalDate.of(1992, 6, 15));
+        patient.setPhone("13612345678");
+        patient.setIdCard("310101199206151234");
+        patient = patientRepository.save(patient);
+
+        var checkupPackage = checkupPackageRepository.findByEnabledTrueOrderByIdDesc().get(0);
+        var doctor = doctorRepository.findEnabledOrdered().get(0);
+        var order = examOrderService.create(patient.getId(), checkupPackage.getId(), doctor.getId(), LocalDate.now());
+
+        var resultIds = order.getResults().stream().map(result -> result.getId()).toList();
+        var values = order.getResults().stream()
+                .map(result -> "检查所见：未见明显异常。\n这是用于验证大段落结果录入的第二行。")
+                .toList();
+        var statuses = Collections.nCopies(order.getResults().size(), ResultStatus.NORMAL);
+        var remarks = Collections.nCopies(order.getResults().size(), "");
+        examOrderService.saveResults(order.getId(), resultIds, values, statuses, remarks);
+
+        reportAttachmentService.store(examOrderService.get(order.getId()),
+                new MockMultipartFile("file", "影像报告.png", "image/png", new byte[]{1, 2, 3, 4}));
+        examOrderService.submitForReview(order.getId(), "总体健康状况良好", "保持规律作息并定期复查");
+        assertEquals(OrderStatus.PENDING_REVIEW, examOrderService.get(order.getId()).getStatus());
+        mockMvc.perform(get("/orders/" + order.getId())
+                        .sessionAttr("LOGIN_USER", "admin")
+                        .sessionAttr("LOGIN_ROLE", "ADMIN"))
+                .andExpect(status().isOk());
+
+        examOrderService.approve(order.getId(), doctor.getId(), "审核通过");
+        var approved = examOrderService.get(order.getId());
+        assertEquals(OrderStatus.COMPLETED, approved.getStatus());
+        assertEquals(1, approved.getAttachments().size());
+        assertTrue(approved.getPickupNotifiedAt() != null);
+
+        byte[] pdf = reportPdfService.create(approved);
+        assertTrue(pdf.length > 1000);
+        assertEquals("%PDF", new String(pdf, 0, 4));
+        mockMvc.perform(get("/orders/" + order.getId() + "/report.pdf")
+                        .sessionAttr("LOGIN_USER", "admin")
+                        .sessionAttr("LOGIN_ROLE", "ADMIN"))
+                .andExpect(status().isOk());
     }
 }

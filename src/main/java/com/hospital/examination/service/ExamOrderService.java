@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -17,17 +18,20 @@ public class ExamOrderService {
     private final CheckupPackageRepository packageRepository;
     private final DoctorRepository doctorRepository;
     private final ExamResultRepository resultRepository;
+    private final ReportNotificationSender reportNotificationSender;
 
     public ExamOrderService(ExamOrderRepository orderRepository,
                             PatientRepository patientRepository,
                             CheckupPackageRepository packageRepository,
                             DoctorRepository doctorRepository,
-                            ExamResultRepository resultRepository) {
+                            ExamResultRepository resultRepository,
+                            ReportNotificationSender reportNotificationSender) {
         this.orderRepository = orderRepository;
         this.patientRepository = patientRepository;
         this.packageRepository = packageRepository;
         this.doctorRepository = doctorRepository;
         this.resultRepository = resultRepository;
+        this.reportNotificationSender = reportNotificationSender;
     }
 
     @Transactional
@@ -63,14 +67,22 @@ public class ExamOrderService {
 
     @Transactional(readOnly = true)
     public ExamOrder get(Long id) {
-        return orderRepository.findById(id)
+        ExamOrder order = orderRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("体检单不存在"));
+        order.getResults().size();
+        order.getAttachments().size();
+        return order;
     }
 
     @Transactional
     public void saveResults(Long orderId, List<Long> resultIds, List<String> values,
                             List<ResultStatus> statuses, List<String> remarks) {
         ExamOrder order = get(orderId);
+        assertReportEditable(order);
+        if (resultIds.size() != values.size() || resultIds.size() != statuses.size()
+                || resultIds.size() != remarks.size()) {
+            throw new IllegalArgumentException("检查结果表单数据不完整");
+        }
         for (int i = 0; i < resultIds.size(); i++) {
             ExamResult result = resultRepository.findById(resultIds.get(i))
                     .orElseThrow(() -> new EntityNotFoundException("检查结果不存在"));
@@ -87,24 +99,75 @@ public class ExamOrderService {
     }
 
     @Transactional
-    public void finish(Long orderId, String conclusion, String advice) {
+    public void submitForReview(Long orderId, String conclusion, String advice) {
         ExamOrder order = get(orderId);
+        assertReportEditable(order);
         boolean hasPending = order.getResults().stream()
                 .anyMatch(result -> result.getStatus() == ResultStatus.PENDING);
         if (hasPending) {
-            throw new IllegalStateException("仍有待检查项目，暂不能完成体检");
+            throw new IllegalStateException("仍有待检查项目，暂不能提交审核");
         }
         order.setConclusion(conclusion);
         order.setAdvice(advice);
+        order.setReviewComment(null);
+        order.setSubmittedAt(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING_REVIEW);
+    }
+
+    @Transactional
+    public void approve(Long orderId, Long reviewerId, String reviewComment) {
+        ExamOrder order = get(orderId);
+        if (order.getStatus() != OrderStatus.PENDING_REVIEW) {
+            throw new IllegalStateException("只有待审核报告可以审核通过");
+        }
+        Doctor reviewer = doctorRepository.findById(reviewerId)
+                .filter(Doctor::isEnabled)
+                .orElseThrow(() -> new EntityNotFoundException("审核医生不存在或已停用"));
+        order.setReviewer(reviewer);
+        order.setReviewComment(reviewComment);
+        order.setReviewedAt(LocalDateTime.now());
         order.setStatus(OrderStatus.COMPLETED);
+        reportNotificationSender.sendPickupReady(
+                order.getPatient().getPhone(), order.getPatient().getName(), order.getOrderNo());
+        order.setPickupNotifiedAt(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void reject(Long orderId, Long reviewerId, String reviewComment) {
+        ExamOrder order = get(orderId);
+        if (order.getStatus() != OrderStatus.PENDING_REVIEW) {
+            throw new IllegalStateException("只有待审核报告可以退回");
+        }
+        if (reviewComment == null || reviewComment.isBlank()) {
+            throw new IllegalArgumentException("退回报告时必须填写审核意见");
+        }
+        Doctor reviewer = doctorRepository.findById(reviewerId)
+                .filter(Doctor::isEnabled)
+                .orElseThrow(() -> new EntityNotFoundException("审核医生不存在或已停用"));
+        order.setReviewer(reviewer);
+        order.setReviewComment(reviewComment);
+        order.setReviewedAt(LocalDateTime.now());
+        order.setStatus(OrderStatus.EXAMINING);
     }
 
     @Transactional
     public void cancel(Long orderId) {
         ExamOrder order = get(orderId);
-        if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalStateException("已完成的体检单不能取消");
+        if (order.getStatus() == OrderStatus.PENDING_REVIEW || order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException("已提交审核或已完成的体检单不能取消");
         }
         order.setStatus(OrderStatus.CANCELLED);
+    }
+
+    private void assertReportEditable(ExamOrder order) {
+        if (order.getStatus() == OrderStatus.PENDING_REVIEW) {
+            throw new IllegalStateException("报告正在审核，不能修改");
+        }
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new IllegalStateException("已审核完成的报告不能修改");
+        }
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("已取消的体检单不能修改");
+        }
     }
 }

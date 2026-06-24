@@ -17,7 +17,11 @@
 - 单位参检人 Excel 标准模板下载与一键批量导入
 - 体检登记与状态跟踪
 - 分项目检查结果录入及异常标记
-- 总检结论、健康建议和打印版体检报告
+- 大段落检查结果、影像/PDF 附件上传
+- 总检结论、健康建议、审核医生审核及退回修改
+- 审核完成后短信通知受检人领取报告
+- 后端生成并下载 PDF 版体检报告
+- 预留外部科室检查检验结果自动同步接口
 
 ## 环境要求
 
@@ -62,6 +66,14 @@ export SMS_DEV_MODE=true
 ```
 
 生产环境应实现 `SmsSender` 接口对接阿里云、腾讯云等短信服务，并设置 `SMS_DEV_MODE=false`，避免验证码出现在接口响应中。验证码有效期为 5 分钟，同一手机号 60 秒内不可重复发送，验证成功后立即失效。
+
+报告领取通知通过 `ReportNotificationSender` 接口发送。默认实现仅写入日志，生产环境应提供真实短信实现。
+
+## 体检报告文件与 PDF
+
+- 上传文件默认保存在 `runtime-assets/report-uploads`，可通过 `REPORT_UPLOAD_DIR` 修改。
+- PDF 中文字体可通过 `REPORT_PDF_FONT_PATH` 指定；macOS 默认会尝试 Arial Unicode，Linux 建议配置 Noto Sans CJK 字体。
+- 外部科室系统通过实现 `ExternalResultProvider` 接口接入，检查项目的“外部系统项目编码”用于结果匹配。
 
 ## 首页背景图热替换
 
