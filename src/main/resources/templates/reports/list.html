@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>体检报告维护</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<aside th:replace="~{fragments/layout :: sidebar}"></aside>
+<main class="main">
+    <header th:replace="~{fragments/layout :: topbar('体检报告维护')}"></header>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <section class="report-stats">
+        <a th:href="@{/reports(status='EXAMINING')}">
+            <span>录入中</span><strong th:text="${editingCount}">0</strong><small>支持检查结果及影像录入</small>
+        </a>
+        <a th:href="@{/reports(status='PENDING_REVIEW')}">
+            <span>待审核</span><strong th:text="${pendingReviewCount}">0</strong><small>等待审核医生处理</small>
+        </a>
+        <a th:href="@{/reports(status='COMPLETED')}">
+            <span>已完成</span><strong th:text="${completedCount}">0</strong><small>可查看或导出 PDF</small>
+        </a>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head wrap">
+            <div><h3>体检报告列表</h3><p>集中完成结果录入、附件上传、医生审核及报告导出</p></div>
+            <form class="search-form" method="get">
+                <input name="keyword" th:value="${keyword}" placeholder="体检单号、姓名或手机号">
+                <select name="status">
+                    <option value="">全部报告状态</option>
+                    <option th:each="s:${statuses}" th:value="${s}" th:text="${s.label}"
+                            th:selected="${s == selectedStatus}"></option>
+                </select>
+                <button class="btn">筛选</button>
+            </form>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>体检单号</th><th>受检人</th><th>体检日期</th><th>报告进度</th><th>审核医生</th><th>通知状态</th><th>操作</th></tr></thead>
+                <tbody>
+                <tr th:each="o:${reports}">
+                    <td><a th:href="@{/orders/{id}(id=${o.id})}" th:text="${o.orderNo}"></a></td>
+                    <td><b th:text="${o.patient.name}"></b><small class="table-note" th:text="${o.patient.phone}"></small></td>
+                    <td th:text="${#temporals.format(o.examDate, 'yyyy-MM-dd')}"></td>
+                    <td><span class="badge" th:classappend="${'status-' + #strings.toLowerCase(o.status.name())}" th:text="${o.status.label}"></span></td>
+                    <td th:text="${o.reviewer == null ? '-' : o.reviewer.name}"></td>
+                    <td th:text="${o.pickupNotifiedAt == null ? '未通知' : '已通知领取'}"></td>
+                    <td>
+                        <a class="text-link" th:if="${o.status.name() == 'REGISTERED' or o.status.name() == 'EXAMINING'}"
+                           th:href="@{/orders/{id}(id=${o.id})}">录入报告</a>
+                        <a class="text-link" th:if="${o.status.name() == 'PENDING_REVIEW'}"
+                           th:href="@{/orders/{id}(id=${o.id})}">审核报告</a>
+                        <span class="inline-actions" th:if="${o.status.name() == 'COMPLETED'}">
+                            <a class="text-link" th:href="@{/orders/{id}/report(id=${o.id})}">查看</a>
+                            <a class="text-link" th:href="@{/orders/{id}/report.pdf(id=${o.id})}">PDF</a>
+                        </span>
+                        <span th:if="${o.status.name() == 'CANCELLED'}">已取消</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(reports)}"><td colspan="7" class="empty">暂无符合条件的体检报告</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>
