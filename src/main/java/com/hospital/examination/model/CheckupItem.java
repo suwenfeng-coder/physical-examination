@@ -30,6 +30,9 @@ public class CheckupItem {
     @Column(length = 100)
     private String referenceRange;
 
+    @Column(unique = true, length = 80)
+    private String externalCode;
+
     @DecimalMin(value = "0.00", message = "价格不能小于0")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price = BigDecimal.ZERO;
@@ -65,6 +68,8 @@ public class CheckupItem {
     public void setUnit(String unit) { this.unit = unit; }
     public String getReferenceRange() { return referenceRange; }
     public void setReferenceRange(String referenceRange) { this.referenceRange = referenceRange; }
+    public String getExternalCode() { return externalCode; }
+    public void setExternalCode(String externalCode) { this.externalCode = externalCode; }
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
     public String getDescription() { return description; }

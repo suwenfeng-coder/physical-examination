@@ -26,3 +26,6 @@ app:
   sms:
     provider: ${SMS_PROVIDER:logging}
     dev-mode: ${SMS_DEV_MODE:true}
+  report:
+    upload-dir: ${REPORT_UPLOAD_DIR:runtime-assets/report-uploads}
+    pdf-font-path: ${REPORT_PDF_FONT_PATH:}

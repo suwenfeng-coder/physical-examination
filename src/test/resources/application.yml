@@ -14,3 +14,6 @@ app:
   sms:
     provider: logging
     dev-mode: true
+  report:
+    upload-dir: ${java.io.tmpdir}/physical-examination-test-uploads
+    pdf-font-path: /System/Library/Fonts/Supplemental/Arial Unicode.ttf

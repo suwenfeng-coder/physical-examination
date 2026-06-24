@@ -10,6 +10,7 @@
         <a th:href="@{/}" th:classappend="${requestUri == '/'} ? 'active'"><span>⌂</span> 工作台</a>
         <a th:href="@{/appointments}" th:classappend="${#strings.startsWith(requestUri, '/appointments')} ? 'active'"><span>◷</span> 体检预约</a>
         <a th:href="@{/orders}" th:classappend="${#strings.startsWith(requestUri, '/orders')} ? 'active'"><span>▣</span> 体检管理</a>
+        <a th:href="@{/reports}" th:classappend="${#strings.startsWith(requestUri, '/reports')} ? 'active'"><span>▧</span> 体检报告维护</a>
         <a th:href="@{/patients}" th:classappend="${#strings.startsWith(requestUri, '/patients')} ? 'active'"><span>♙</span> 受检人管理</a>
         <a th:href="@{/packages}" th:classappend="${#strings.startsWith(requestUri, '/packages')} ? 'active'"><span>▤</span> 套餐管理</a>
         <a th:href="@{/package-templates}" th:classappend="${#strings.startsWith(requestUri, '/package-templates')} ? 'active'"><span>▥</span> 套餐模板</a>

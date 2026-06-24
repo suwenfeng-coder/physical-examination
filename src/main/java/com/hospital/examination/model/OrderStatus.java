@@ -3,6 +3,7 @@ package com.hospital.examination.model;
 public enum OrderStatus {
     REGISTERED("已登记"),
     EXAMINING("检查中"),
+    PENDING_REVIEW("待审核"),
     COMPLETED("已完成"),
     CANCELLED("已取消");
 

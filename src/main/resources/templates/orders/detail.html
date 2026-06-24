@@ -3,7 +3,7 @@
 <body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('体检单详情')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
 <section class="order-summary">
 <div><span class="eyebrow">EXAMINATION ORDER</span><h2 th:text="${order.orderNo}"></h2><p th:text="${order.checkupPackage.name + ' · ' + #temporals.format(order.examDate, 'yyyy年MM月dd日')}"></p></div>
-<div class="summary-actions"><span class="badge large" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span><a class="btn" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">打印报告</a></div>
+<div class="summary-actions"><span class="badge large" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span><a class="btn" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看报告</a><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report.pdf(id=${order.id})}">导出 PDF</a></div>
 </section>
 <section class="info-grid">
 <div class="panel info-card"><span>受检人</span><strong th:text="${order.patient.name}"></strong><p th:text="${order.patient.gender.label + ' · ' + order.patient.age + '岁 · ' + order.patient.phone}"></p></div>
@@ -11,22 +11,36 @@
 <div class="panel info-card"><span>套餐金额</span><strong th:text="${'¥ ' + order.amount}"></strong><p th:text="${order.results.size() + ' 个检查项目'}"></p></div>
 </section>
 <section class="panel">
-<div class="panel-head"><div><h3>检查结果录入</h3><p>逐项填写检查数据并判断是否异常</p></div></div>
+<div class="panel-head"><div><h3>检查结果录入</h3><p>支持手动录入短结果或大段落影像/检验描述</p></div><form th:if="${order.status.name() != 'PENDING_REVIEW' and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}" th:action="@{/orders/{id}/sync-results(id=${order.id})}" method="post"><button class="btn" th:disabled="${!externalSyncConfigured}" th:title="${externalSyncConfigured ? '从外部科室同步' : '尚未配置外部科室接口'}">同步科室结果</button></form></div>
 <form th:action="@{/orders/{id}/results(id=${order.id})}" method="post">
 <div class="table-wrap"><table class="result-table"><thead><tr><th>检查项目</th><th>科室</th><th>参考范围</th><th>检查结果</th><th>判定</th><th>备注</th></tr></thead><tbody>
 <tr th:each="r:${order.results}"><input type="hidden" name="resultIds" th:value="${r.id}">
 <td><b th:text="${r.item.name}"></b></td><td th:text="${r.item.departmentName}"></td><td><span th:text="${#strings.isEmpty(r.item.referenceRange) ? '-' : r.item.referenceRange}"></span><small th:if="${!#strings.isEmpty(r.item.unit)}" th:text="${r.item.unit}"></small></td>
-<td><input name="resultValues" th:value="${r.resultValue}" placeholder="填写结果"></td>
-<td><select name="resultStatuses"><option th:each="s:${resultStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == r.status}"></option></select></td>
-<td><input name="remarks" th:value="${r.remark}" placeholder="选填"></td></tr></tbody></table></div>
-<div class="form-actions" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}"><button class="btn btn-primary">保存检查结果</button></div></form>
+<td><textarea name="resultValues" rows="3" th:text="${r.resultValue}" placeholder="填写数值、描述或大段落检查结果" th:readonly="${order.status.name() == 'PENDING_REVIEW' or order.status.name() == 'COMPLETED' or order.status.name() == 'CANCELLED'}"></textarea></td>
+<td><select name="resultStatuses" th:disabled="${order.status.name() == 'PENDING_REVIEW' or order.status.name() == 'COMPLETED' or order.status.name() == 'CANCELLED'}"><option th:each="s:${resultStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == r.status}"></option></select></td>
+<td><textarea name="remarks" rows="3" th:text="${r.remark}" placeholder="选填" th:readonly="${order.status.name() == 'PENDING_REVIEW' or order.status.name() == 'COMPLETED' or order.status.name() == 'CANCELLED'}"></textarea></td></tr></tbody></table></div>
+<div class="form-actions" th:if="${order.status.name() != 'PENDING_REVIEW' and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}"><button class="btn btn-primary">保存检查结果</button></div></form>
+</section>
+<section class="panel">
+<div class="panel-head"><div><h3>影像与报告附件</h3><p>支持 JPG、PNG、GIF、WebP 和 PDF，单个文件不超过 10MB</p></div></div>
+<div class="attachment-list" th:if="${!order.attachments.isEmpty()}"><a th:each="a:${order.attachments}" th:href="@{/orders/{orderId}/attachments/{attachmentId}(orderId=${order.id},attachmentId=${a.id})}" target="_blank"><span>▧</span><b th:text="${a.originalName}"></b><small th:text="${#numbers.formatDecimal(a.size / 1024.0, 1, 1) + ' KB'}"></small></a></div>
+<div class="empty compact" th:if="${order.attachments.isEmpty()}">暂未上传影像附件</div>
+<form class="attachment-upload" th:if="${order.status.name() != 'PENDING_REVIEW' and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}" th:action="@{/orders/{id}/attachments(id=${order.id})}" method="post" enctype="multipart/form-data"><input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" required><button class="btn btn-primary">上传附件</button></form>
 </section>
 <section class="panel report-editor" th:if="${order.status.name() != 'CANCELLED'}">
-<div class="panel-head"><div><h3>总检结论</h3><p>所有项目完成后生成体检报告</p></div></div>
-<form th:action="@{/orders/{id}/finish(id=${order.id})}" method="post"><div class="form-grid">
-<label>健康结论<textarea name="conclusion" rows="4" th:text="${order.conclusion}" placeholder="综合各项检查结果填写健康结论" required></textarea></label>
-<label>医生建议<textarea name="advice" rows="4" th:text="${order.advice}" placeholder="填写复查、生活方式等建议" required></textarea></label></div>
-<div class="form-actions"><button class="btn btn-primary" th:if="${order.status.name() != 'COMPLETED'}">完成体检并生成报告</button><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看体检报告</a></div></form>
+<div class="panel-head"><div><h3>总检结论</h3><p>录入完成后提交审核，审核通过才会生成正式报告并通知受检人</p></div></div>
+<form th:action="@{/orders/{id}/submit-review(id=${order.id})}" method="post"><div class="form-grid">
+<label>健康结论<textarea name="conclusion" rows="6" th:text="${order.conclusion}" placeholder="综合各项检查结果填写健康结论" required th:readonly="${order.status.name() == 'PENDING_REVIEW' or order.status.name() == 'COMPLETED'}"></textarea></label>
+<label>医生建议<textarea name="advice" rows="6" th:text="${order.advice}" placeholder="填写复查、生活方式等建议" required th:readonly="${order.status.name() == 'PENDING_REVIEW' or order.status.name() == 'COMPLETED'}"></textarea></label></div>
+<div class="form-actions"><button class="btn btn-primary" th:if="${order.status.name() != 'PENDING_REVIEW' and order.status.name() != 'COMPLETED'}">提交审核</button><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看体检报告</a></div></form>
 </section>
-<form class="danger-zone" th:if="${order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}" th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post" onsubmit="return confirm('确定取消该体检单吗？')"><button class="text-danger">取消此体检单</button></form>
+<section class="panel review-panel" th:if="${order.status.name() == 'PENDING_REVIEW' and canReview}">
+<div class="panel-head"><div><h3>审核医生审核</h3><p>审核通过后系统发送短信通知受检人领取报告</p></div></div>
+<form method="post"><div class="form-grid"><label>审核医生 <em>*</em><select name="reviewerId" required><option value="">请选择审核医生</option><option th:each="d:${reviewers}" th:value="${d.id}" th:text="${d.name + ' · ' + d.departmentName}"></option></select></label><label>审核意见<textarea name="reviewComment" rows="4" placeholder="通过时可选；退回时必填"></textarea></label></div><div class="form-actions"><button class="btn" th:formaction="@{/orders/{id}/reject(id=${order.id})}">退回修改</button><button class="btn btn-primary" th:formaction="@{/orders/{id}/approve(id=${order.id})}">审核通过并发送短信</button></div></form>
+</section>
+<div class="alert" th:if="${order.status.name() == 'PENDING_REVIEW' and !canReview}">报告正在等待具备 ADMIN 或 DOCTOR 角色的审核账号处理。</div>
+<section class="panel audit-record" th:if="${order.reviewer != null}">
+<div class="panel-head"><div><h3>审核记录</h3><p th:text="${order.status.name() == 'COMPLETED' ? '报告已审核完成' : '报告曾被退回修改'}"></p></div></div><div class="detail-list"><div><span>审核医生</span><b th:text="${order.reviewer.name}"></b></div><div><span>审核时间</span><b th:text="${#temporals.format(order.reviewedAt, 'yyyy-MM-dd HH:mm')}"></b></div><div class="span-2"><span>审核意见</span><b th:text="${#strings.isEmpty(order.reviewComment) ? '无' : order.reviewComment}"></b></div><div th:if="${order.pickupNotifiedAt != null}"><span>领取短信</span><b th:text="${'已于 ' + #temporals.format(order.pickupNotifiedAt, 'yyyy-MM-dd HH:mm') + ' 发送'}"></b></div></div>
+</section>
+<form class="danger-zone" th:if="${order.status.name() != 'PENDING_REVIEW' and order.status.name() != 'COMPLETED' and order.status.name() != 'CANCELLED'}" th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post" onsubmit="return confirm('确定取消该体检单吗？')"><button class="text-danger">取消此体检单</button></form>
 </main></body></html>

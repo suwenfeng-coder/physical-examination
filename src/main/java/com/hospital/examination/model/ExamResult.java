@@ -16,14 +16,15 @@ public class ExamResult {
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     private CheckupItem item;
 
-    @Column(length = 200)
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String resultValue;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ResultStatus status = ResultStatus.PENDING;
 
-    @Column(length = 500)
+    @Column(length = 2000)
     private String remark;
 
     public Long getId() { return id; }

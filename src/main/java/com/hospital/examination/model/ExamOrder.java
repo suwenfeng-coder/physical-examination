@@ -39,11 +39,25 @@ public class ExamOrder {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount = BigDecimal.ZERO;
 
-    @Column(length = 1000)
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String conclusion;
 
-    @Column(length = 1000)
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String advice;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    private Doctor reviewer;
+
+    @Column(length = 1000)
+    private String reviewComment;
+
+    private LocalDateTime submittedAt;
+
+    private LocalDateTime reviewedAt;
+
+    private LocalDateTime pickupNotifiedAt;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -51,6 +65,10 @@ public class ExamOrder {
     @OneToMany(mappedBy = "examOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id asc")
     private List<ExamResult> results = new ArrayList<>();
+
+    @OneToMany(mappedBy = "examOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt asc")
+    private List<ReportAttachment> attachments = new ArrayList<>();
 
     @PrePersist
     void prePersist() {
@@ -77,7 +95,19 @@ public class ExamOrder {
     public void setConclusion(String conclusion) { this.conclusion = conclusion; }
     public String getAdvice() { return advice; }
     public void setAdvice(String advice) { this.advice = advice; }
+    public Doctor getReviewer() { return reviewer; }
+    public void setReviewer(Doctor reviewer) { this.reviewer = reviewer; }
+    public String getReviewComment() { return reviewComment; }
+    public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
+    public LocalDateTime getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
+    public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public LocalDateTime getPickupNotifiedAt() { return pickupNotifiedAt; }
+    public void setPickupNotifiedAt(LocalDateTime pickupNotifiedAt) { this.pickupNotifiedAt = pickupNotifiedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<ExamResult> getResults() { return results; }
     public void setResults(List<ExamResult> results) { this.results = results; }
+    public List<ReportAttachment> getAttachments() { return attachments; }
+    public void setAttachments(List<ReportAttachment> attachments) { this.attachments = attachments; }
 }

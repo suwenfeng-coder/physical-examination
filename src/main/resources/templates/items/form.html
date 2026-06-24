@@ -12,5 +12,6 @@
 </span><small class="field-error" th:errors="*{department}"></small></label>
 <label>参考范围<input th:field="*{referenceRange}" placeholder="如：3.9-6.1"></label><label>单位<input th:field="*{unit}" placeholder="如：mmol/L"></label>
 <label>单项价格 <em>*</em><input type="number" min="0" step="0.01" th:field="*{price}"><small class="field-error" th:errors="*{price}"></small></label>
+<label>外部系统项目编码<input th:field="*{externalCode}" placeholder="用于自动同步结果，可不填"></label>
 </div><label>项目说明<textarea rows="3" th:field="*{description}"></textarea></label></div>
 <div class="form-actions"><a class="btn" th:href="@{/items}">取消</a><button class="btn btn-primary">保存</button></div></form></section></main><script th:src="@{/js/department-lookup.js}"></script></body></html>
