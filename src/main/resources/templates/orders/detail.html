@@ -3,7 +3,7 @@
 <body><aside th:replace="~{fragments/layout :: sidebar}"></aside><main class="main"><header th:replace="~{fragments/layout :: topbar('体检单详情')}"></header><div th:replace="~{fragments/layout :: alerts}"></div>
 <section class="order-summary">
 <div><span class="eyebrow">EXAMINATION ORDER</span><h2 th:text="${order.orderNo}"></h2><p th:text="${order.checkupPackage.name + ' · ' + #temporals.format(order.examDate, 'yyyy年MM月dd日')}"></p></div>
-<div class="summary-actions"><span class="badge large" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span><a class="btn" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看报告</a><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report.pdf(id=${order.id})}">导出 PDF</a></div>
+<div class="summary-actions"><span class="badge large" th:classappend="${'status-' + #strings.toLowerCase(order.status.name())}" th:text="${order.status.label}"></span><a class="btn" th:href="@{/orders/{id}/print-form(id=${order.id})}">打印体检单</a><a class="btn" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report(id=${order.id})}">查看报告</a><a class="btn btn-primary" th:if="${order.status.name() == 'COMPLETED'}" th:href="@{/orders/{id}/report.pdf(id=${order.id})}">导出 PDF</a></div>
 </section>
 <section class="info-grid">
 <div class="panel info-card"><span>受检人</span><strong th:text="${order.patient.name}"></strong><p th:text="${order.patient.gender.label + ' · ' + order.patient.age + '岁 · ' + order.patient.phone}"></p></div>

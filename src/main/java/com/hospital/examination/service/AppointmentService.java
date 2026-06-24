@@ -35,17 +35,20 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final CheckupPackageRepository packageRepository;
     private final DoctorRepository doctorRepository;
+    private final ExamOrderService examOrderService;
 
     public AppointmentService(AppointmentRepository appointmentRepository,
                               OrganizationRepository organizationRepository,
                               PatientRepository patientRepository,
                               CheckupPackageRepository packageRepository,
-                              DoctorRepository doctorRepository) {
+                              DoctorRepository doctorRepository,
+                              ExamOrderService examOrderService) {
         this.appointmentRepository = appointmentRepository;
         this.organizationRepository = organizationRepository;
         this.patientRepository = patientRepository;
         this.packageRepository = packageRepository;
         this.doctorRepository = doctorRepository;
+        this.examOrderService = examOrderService;
     }
 
     @Transactional
@@ -137,6 +140,27 @@ public class AppointmentService {
                 .orElseThrow(() -> new EntityNotFoundException("预约记录不存在"));
         appointment.getParticipants().size();
         return appointment;
+    }
+
+    @Transactional
+    public ExamOrder checkIn(Long appointmentId, Long participantId) {
+        Appointment appointment = get(appointmentId);
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalStateException("已取消的预约不能签到");
+        }
+        AppointmentParticipant participant = appointment.getParticipants().stream()
+                .filter(item -> item.getId().equals(participantId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("参检人不属于当前预约"));
+        if (participant.getExamOrder() != null) {
+            return participant.getExamOrder();
+        }
+        ExamOrder order = examOrderService.create(participant.getPatient().getId(),
+                appointment.getCheckupPackage().getId(),
+                appointment.getDoctor() == null ? null : appointment.getDoctor().getId(),
+                appointment.getAppointmentDate());
+        participant.setExamOrder(order);
+        return order;
     }
 
     @Transactional
